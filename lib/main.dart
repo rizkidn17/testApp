@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart' as DotEnv;
 
 void main() => runApp(MaterialApp(
       title: "Weather App",
@@ -21,10 +22,25 @@ class _HomeState extends State<Home> {
   var current;
   var humid;
   var windSpeed;
+  var city = "Jakarta";
+
+  final cityCon = new TextEditingController();
+
+  Future setCity() async {
+    setState(() {
+      this.city = cityCon.text;
+      this.getWeather();
+    });
+  }
 
   Future getWeather() async {
+    await DotEnv.load(fileName: ".env");
+    var keyID = DotEnv.env['api_key'];
     http.Response response = await http.get(
-        "http://api.openweathermap.org/data/2.5/weather?q=Jakarta&units=imperial&appid=a7d422356beafe3d5b161f95ce5f917e");
+        "http://api.openweathermap.org/data/2.5/weather?units=imperial&appid=" +
+            keyID +
+            "&q=" +
+            city.toString());
     var results = jsonDecode(response.body);
     setState(() {
       this.temp = results['main']['temp'];
@@ -57,7 +73,7 @@ class _HomeState extends State<Home> {
                 Padding(
                   padding: EdgeInsets.only(bottom: 10.0),
                   child: Text(
-                    "Currently in Jakarta",
+                    "Currently in " + city,
                     style: TextStyle(
                         color: Colors.white,
                         fontSize: 14.0,
@@ -65,7 +81,7 @@ class _HomeState extends State<Home> {
                   ),
                 ),
                 Text(
-                  temp != null ? temp.toString() + "\u0000" : "Loading",
+                  temp != null ? temp.toString() + "\u00B0" : "Loading",
                   style: TextStyle(
                       color: Colors.white,
                       fontSize: 40.0,
@@ -93,7 +109,7 @@ class _HomeState extends State<Home> {
                     leading: FaIcon(FontAwesomeIcons.thermometerHalf),
                     title: Text("Temperature"),
                     trailing: Text(
-                        temp != null ? temp.toString() + "\u0000" : "Loading"),
+                        temp != null ? temp.toString() + "\u00B0" : "Loading"),
                   ),
                   ListTile(
                     leading: FaIcon(FontAwesomeIcons.cloud),
@@ -111,7 +127,16 @@ class _HomeState extends State<Home> {
                     title: Text("Wind Speed"),
                     trailing: Text(
                         windSpeed != null ? windSpeed.toString() : "Loading"),
-                  )
+                  ),
+                  TextField(
+                    controller: cityCon,
+                    decoration: InputDecoration(hintText: "Input the City"),
+                  ),
+                  RaisedButton(
+                      onPressed: () {
+                        setCity();
+                      },
+                      child: Text("Submit"))
                 ],
               ),
             ),
